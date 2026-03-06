@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&amp;display=swap');
+    </style>
+  </defs>
+
+  <!-- Transparent background -->
+
+  <!-- Outer thin border square -->
+  <rect x="20" y="20" width="360" height="360" fill="none" stroke="#333" stroke-width="1"/>
+
+  <!-- Inner accent lines - top left -->
+  <line x1="20" y1="20" x2="60" y2="20" stroke="#fff" stroke-width="1"/>
+  <line x1="20" y1="20" x2="20" y2="60" stroke="#fff" stroke-width="1"/>
+
+  <!-- Inner accent lines - top right -->
+  <line x1="380" y1="20" x2="340" y2="20" stroke="#fff" stroke-width="1"/>
+  <line x1="380" y1="20" x2="380" y2="60" stroke="#fff" stroke-width="1"/>
+
+  <!-- Inner accent lines - bottom left -->
+  <line x1="20" y1="380" x2="60" y2="380" stroke="#fff" stroke-width="1"/>
+  <line x1="20" y1="380" x2="20" y2="340" stroke="#fff" stroke-width="1"/>
+
+  <!-- Inner accent lines - bottom right -->
+  <line x1="380" y1="380" x2="340" y2="380" stroke="#fff" stroke-width="1"/>
+  <line x1="380" y1="380" x2="380" y2="340" stroke="#fff" stroke-width="1"/>
+
+  <!-- SBN Monogram - large editorial letterform -->
+  <text
+    x="200"
+    y="248"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="148"
+    font-weight="300"
+    fill="#fff"
+    text-anchor="middle"
+    letter-spacing="8"
+    dominant-baseline="auto"
+  >SBN</text>
+
+  <!-- Thin horizontal rule -->
+  <line x1="80" y1="278" x2="320" y2="278" stroke="#444" stroke-width="0.75"/>
+
+  <!-- Still By Nazhir wordmark -->
+  <text
+    x="200"
+    y="308"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="13"
+    font-weight="300"
+    fill="#888"
+    text-anchor="middle"
+    letter-spacing="6"
+  >STILL BY NAZHIR</text>
+
+  <!-- Top label -->
+  <text
+    x="200"
+    y="148"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="10"
+    font-weight="300"
+    fill="#444"
+    text-anchor="middle"
+    letter-spacing="5"
+  >PHOTOGRAPHY</text>
+
+  <!-- Small decorative diamond -->
+  <polygon points="200,330 205,337 200,344 195,337" fill="none" stroke="#444" stroke-width="0.75"/>
+
+</svg>
