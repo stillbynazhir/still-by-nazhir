@@ -103,7 +103,18 @@ export default function StillByNazhir() {
       },
       EMAILJS_PUBLIC_KEY
     )
-    .then(() => setSubmitted(true))
+    .then(() => {
+      emailjs.send(
+        EMAILJS_SERVICE_ID,
+        "template_zridmhv",
+        {
+          from_name: formData.name,
+          reply_to: formData.email,
+        },
+        EMAILJS_PUBLIC_KEY
+      );
+      setSubmitted(true);
+    })
     .catch(() => setError("Something went wrong. Please email me directly."))
     .finally(() => setSending(false));
   };
