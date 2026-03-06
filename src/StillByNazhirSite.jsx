@@ -39,6 +39,7 @@ function useScrollY() {
     const handler = () => setY(window.scrollY);
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return y;
 }
@@ -70,7 +71,6 @@ function FadeIn({ children, delay = 0, style = {} }) {
 
 export default function StillByNazhir() {
   const scrollY = useScrollY();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", type: "Real Estate", message: "" });
   const [submitted, setSubmitted] = useState(false);
 
@@ -298,7 +298,7 @@ const handleSubmit = (e) => {
     { size: "span 2", height: 480, src: "portfolio-1.jpg", label: "Events", pos: "top" },
     { size: "span 1", height: 480, src: "portfolio-2.jpg", label: "Portraits", pos: "top" },
     { size: "span 1", height: 320, src: "portfolio-3.jpg", label: "Moments", pos: "center" },
-    { size: "span 2", height: 320, src: "portfolio-4.jpg", label: "Interiors", pos: "center" },,
+    { size: "span 2", height: 320, src: "portfolio-4.jpg", label: "Interiors", pos: "center" },
   ].map((item, i) => (
     <FadeIn key={i} delay={i * 0.1} style={{ gridColumn: item.size }}>
       <div
