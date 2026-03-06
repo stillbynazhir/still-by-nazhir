@@ -39,7 +39,6 @@ function useScrollY() {
     const handler = () => setY(window.scrollY);
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return y;
 }
@@ -50,6 +49,7 @@ function useInView(ref) {
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold: 0.15 });
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return inView;
 }
