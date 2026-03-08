@@ -9,17 +9,17 @@ const NAV_LINKS = ["Portfolio", "Services", "About", "Contact"];
 const SERVICES = [
   {
     title: "Real Estate",
-    price: "From $150",
+    price: "From $200",
     desc: "Professional listing photography that sells. Delivered within 24 hours, MLS ready.",
   },
   {
     title: "Portraits",
-    price: "From $100",
+    price: "From $150",
     desc: "Headshots, photoshoots and personal branding portraits that are true to you. No filters, no pretense.",
   },
   {
     title: "Events",
-    price: "From $200",
+    price: "From $300",
     desc: "Birthdays, gatherings, corporate events. Every moment captured with intention.",
   },
 ];
