@@ -12,13 +12,13 @@ const NAV_LINKS = ["Portfolio", "Services", "About", "Contact"];
 
 const SERVICES = [
   {
-    title: "Real Estate",
-    price: "From $200",
-    desc: "Professional listing photography that sells. Delivered within 24 hours, MLS ready.",
+    title: "Weddings",
+    price: "From $1,500",
+    desc: "Full-day wedding coverage that captures every unscripted moment. Sneak peeks within 48 hours, full gallery in 3 weeks.",
   },
   {
     title: "Portraits",
-    price: "From $150",
+    price: "From $200",
     desc: "Headshots, photoshoots and personal branding portraits that are true to you. No filters, no pretense.",
   },
   {
@@ -34,7 +34,10 @@ const STATS = [
   { value: "3+", label: "Specialties" },
 ];
 
-const GALLERY_FILTERS = ["all", "portraits", "real estate", "events"];
+// Preferred display order for known categories. Any category not listed here
+// (i.e. a new one you add later) still shows up automatically, just appended
+// after the known ones — and any category with zero photos stays hidden.
+const GALLERY_FILTER_ORDER = ["portraits", "weddings", "events"];
 
 function useScrollY() {
   const [y, setY] = useState(0);
@@ -172,6 +175,23 @@ function GalleryPage({ isMobile, onBack }) {
 
   const aspectMap = { portrait: "3 / 4", landscape: "4 / 3", square: "1 / 1" };
 
+  // Only show tabs for categories that actually have at least one photo.
+  // New categories you add to the gallery data show up automatically;
+  // empty ones (like "weddings" before any wedding photos exist) stay hidden.
+  const presentCategories = Array.from(new Set(galleryItems.map(g => g.category)));
+  const knownPresent = GALLERY_FILTER_ORDER.filter(f => presentCategories.includes(f));
+  const extraPresent = presentCategories.filter(c => !GALLERY_FILTER_ORDER.includes(c));
+  const visibleFilters = galleryItems.length > 0
+    ? ["all", ...knownPresent, ...extraPresent]
+    : [];
+
+  useEffect(() => {
+    if (visibleFilters.length > 0 && !visibleFilters.includes(activeFilter)) {
+      setActiveFilter("all");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [galleryItems]);
+
   return (
     <div style={{ minHeight: "100vh", paddingTop: isMobile ? 80 : 100 }}>
       {lightboxIdx !== null && (
@@ -201,25 +221,27 @@ function GalleryPage({ isMobile, onBack }) {
           <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: 10, color: "#444", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 12 }}>Browse</p>
           <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(40px, 6vw, 64px)", fontWeight: 300, color: "#fff", lineHeight: 1.1, marginBottom: 12 }}>Gallery</h2>
           <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: 14, color: "#333", lineHeight: 1.8, marginBottom: 40, maxWidth: 520 }}>
-            A selection of recent work across portraits, real estate, and events.
+            A selection of recent work across portraits, weddings, and events.
           </p>
         </FadeIn>
 
-        {/* Filter tabs */}
-        <FadeIn delay={0.1}>
-          <div style={{
-            display: "flex", gap: isMobile ? 4 : 8, flexWrap: "wrap",
-            borderBottom: "1px solid #161616", marginBottom: 32,
-          }}>
-            {GALLERY_FILTERS.map(f => (
-              <button
-                key={f}
-                className={`gallery-tab${activeFilter === f ? " active" : ""}`}
-                onClick={() => { setActiveFilter(f); setLightboxIdx(null); }}
-              >{f}</button>
-            ))}
-          </div>
-        </FadeIn>
+        {/* Filter tabs — only rendered for categories that have photos */}
+        {visibleFilters.length > 0 && (
+          <FadeIn delay={0.1}>
+            <div style={{
+              display: "flex", gap: isMobile ? 4 : 8, flexWrap: "wrap",
+              borderBottom: "1px solid #161616", marginBottom: 32,
+            }}>
+              {visibleFilters.map(f => (
+                <button
+                  key={f}
+                  className={`gallery-tab${activeFilter === f ? " active" : ""}`}
+                  onClick={() => { setActiveFilter(f); setLightboxIdx(null); }}
+                >{f}</button>
+              ))}
+            </div>
+          </FadeIn>
+        )}
 
         {/* States: loading / error / empty / grid */}
         {loading && (
@@ -268,7 +290,7 @@ export default function StillByNazhir() {
   const scrollY = useScrollY();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", type: "Real Estate", message: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", type: "Wedding", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -528,7 +550,7 @@ export default function StillByNazhir() {
                 { size: isMobile ? "span 1" : "span 2", height: isMobile ? 280 : 480, src: "portfolio-1.jpg", label: "Events", pos: "top" },
                 { size: "span 1", height: isMobile ? 280 : 480, src: "portfolio-2.jpg", label: "Portraits", pos: "top" },
                 { size: "span 1", height: isMobile ? 240 : 320, src: "portfolio-3.jpg", label: "Moments", pos: "center" },
-                { size: isMobile ? "span 1" : "span 2", height: isMobile ? 240 : 320, src: "portfolio-4.jpg", label: "Interiors", pos: "center" },
+                { size: isMobile ? "span 1" : "span 2", height: isMobile ? 240 : 320, src: "portfolio-4.jpg", label: "Receptions", pos: "center" },
               ].map((item, i) => (
                 <FadeIn key={i} delay={i * 0.1} style={{ gridColumn: item.size }}>
                   <div
@@ -550,8 +572,9 @@ export default function StillByNazhir() {
           {/* SERVICES */}
           <section id="services" style={{ padding: isMobile ? "64px 24px" : "100px 48px", borderTop: "1px solid #111" }}>
             <FadeIn>
-              <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: 10, color: "#444", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 12 }}>What I Offer</p>
+              <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: 10, color: "#fff", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 12 }}>What I Offer</p>
               <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 300, color: "#fff", lineHeight: 1.1, marginBottom: 48 }}>Services</h2>
+              <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: 10, color: "#fff", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 12 }}>Prices May Vary</p>
             </FadeIn>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: isMobile ? 12 : 2, alignItems: "stretch" }}>
               {SERVICES.map((s, i) => (
@@ -579,10 +602,10 @@ export default function StillByNazhir() {
                 <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: 10, color: "#444", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 20 }}>Behind the Lens</p>
                 <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(32px, 4vw, 48px)", fontWeight: 300, color: "#fff", lineHeight: 1.1, marginBottom: 28 }}>Nazhir Jackson</h2>
                 <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: 14, color: "#555", lineHeight: 1.9, marginBottom: 20 }}>
-                  Based in Philadelphia, PA. I photograph real estate, portraits, and the moments in between — with an eye for what's true, not just what's pretty.
+                  Based in Philadelphia, PA. I photograph weddings, portraits, and the moments in between — with an eye for what's true, not just what's pretty.
                 </p>
                 <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: 14, color: "#444", lineHeight: 1.9 }}>
-                  Every shoot is approached with intention. Whether it's a listing that needs to sell or a portrait that needs to last, Still By Nazhir delivers images that hold up.
+                  Every shoot is approached with intention. Whether it's a wedding day that deserves to be remembered or a portrait that needs to last, Still By Nazhir delivers images that hold up.
                 </p>
                 <div style={{ marginTop: 36, display: "flex", gap: 24 }}>
                   <a href="#contact" style={{ fontFamily: "'Outfit', sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "#fff", textDecoration: "none", borderBottom: "1px solid #444", paddingBottom: 2 }}>Work With Me</a>
@@ -627,7 +650,7 @@ export default function StillByNazhir() {
                       <div style={{ marginBottom: 32, gridColumn: "1 / -1" }}>
                         <label style={{ fontFamily: "'Outfit', sans-serif", fontSize: 9, color: "#333", letterSpacing: "0.16em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>Shoot Type</label>
                         <select value={formData.type} onChange={e => setFormData(f => ({ ...f, type: e.target.value }))}>
-                          <option>Real Estate</option>
+                          <option>Wedding</option>
                           <option>Headshots</option>
                           <option>Portrait</option>
                           <option>Photoshoot</option>
