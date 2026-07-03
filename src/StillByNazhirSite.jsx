@@ -37,7 +37,7 @@ const STATS = [
 // Preferred display order for known categories. Any category not listed here
 // (i.e. a new one you add later) still shows up automatically, just appended
 // after the known ones — and any category with zero photos stays hidden.
-const GALLERY_FILTER_ORDER = ["portraits", "weddings", "events"];
+const GALLERY_FILTER_ORDER = ["portraits", "weddings", "events", "landscape"];
 
 function useScrollY() {
   const [y, setY] = useState(0);
