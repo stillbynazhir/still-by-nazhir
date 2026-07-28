@@ -29,18 +29,21 @@ export default {
         const category = parts[0].toLowerCase();
         const aspect = parts[1].toLowerCase();
         // FIXED: "realestate" replaced with "weddings" to match the site's
-        // current categories. "fitness" added for athletic/editorial work.
+        // current categories. "fitness" added for athletic/editorial work
+        // (filenames use the short "fitness__" prefix, displayed as
+        // "sports & fitness" to match the site copy).
         const validCategories = ["portraits", "weddings", "events", "fitness", "landscape"];
         const validAspects = ["portrait", "landscape", "square"];
         if (!validCategories.includes(category)) continue;
         if (!validAspects.includes(aspect)) continue;
+        const categoryLabel = category === "fitness" ? "sports & fitness" : category;
         items.push({
           src: `${env.R2_PUBLIC_URL}/${key}`,
-          category,
+          category: categoryLabel,
           aspect
         });
       }
-      const order = ["portraits", "weddings", "events", "fitness", "landscape"];
+      const order = ["portraits", "weddings", "events", "sports & fitness", "landscape"];
       items.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
       return new Response(JSON.stringify(items), {
         headers: {
