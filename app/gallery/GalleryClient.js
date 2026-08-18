@@ -10,6 +10,10 @@ import { GALLERY_WORKER_URL, GALLERY_FILTER_ORDER } from "@/lib/constants";
 
 const ASPECT_MAP = { portrait: "3 / 4", landscape: "4 / 3", square: "1 / 1" };
 
+function naturalCompare(a, b) {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
+
 export default function GalleryClient() {
   const [galleryItems, setGalleryItems] = useState([]);
   const [loading, setLoading] = useState(!!GALLERY_WORKER_URL);
@@ -47,19 +51,45 @@ export default function GalleryClient() {
   const effectiveFilter =
     visibleFilters.length > 0 && !visibleFilters.includes(activeFilter) ? "all" : activeFilter;
 
+  // "Collections" is a category like any other (driven entirely by the
+  // worker — a photo with key "collections__{Name}__{aspect}__{file}.jpg"
+  // comes back as { category: "collections", collection: "{Name}", ... }).
+  // What's special is only how it's *displayed*: instead of one flat grid,
+  // photos are grouped into named sections using each item's `collection`
+  // field as the header — so a name like "Flow and Form" becomes the title
+  // for every photo tagged with that collection, automatically.
+  const isCollectionsView = effectiveFilter === "collections";
+
   const filteredGallery = effectiveFilter === "all"
     ? galleryItems
     : galleryItems.filter((g) => g.category === effectiveFilter);
+
+  const collectionSections = isCollectionsView
+    ? Object.entries(
+        filteredGallery.reduce((acc, item) => {
+          const name = (item.collection || "").trim() || "Collection";
+          (acc[name] = acc[name] || []).push(item);
+          return acc;
+        }, {})
+      ).sort((a, b) => naturalCompare(a[0], b[0]))
+    : null;
+
+  // Flattened, section-ordered view used for both rendering and the
+  // lightbox's prev/next indices, so they always stay in sync with what's
+  // actually on screen.
+  const displayGallery = isCollectionsView
+    ? collectionSections.flatMap(([, items]) => items)
+    : filteredGallery;
 
   return (
     <div style={{ minHeight: "100vh" }} className="gallery-page">
       {lightboxIdx !== null && (
         <Lightbox
-          src={filteredGallery[lightboxIdx].src}
-          alt={filteredGallery[lightboxIdx].category}
+          src={displayGallery[lightboxIdx].src}
+          alt={displayGallery[lightboxIdx].collection || displayGallery[lightboxIdx].category}
           onClose={() => setLightboxIdx(null)}
-          onPrev={() => setLightboxIdx((lightboxIdx - 1 + filteredGallery.length) % filteredGallery.length)}
-          onNext={() => setLightboxIdx((lightboxIdx + 1) % filteredGallery.length)}
+          onPrev={() => setLightboxIdx((lightboxIdx - 1 + displayGallery.length) % displayGallery.length)}
+          onNext={() => setLightboxIdx((lightboxIdx + 1) % displayGallery.length)}
         />
       )}
 
@@ -71,7 +101,7 @@ export default function GalleryClient() {
         <SectionHeading index="—" eyebrow="Browse" title="Gallery" watermark="GALLERY" />
         <FadeIn>
           <p style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "#333", lineHeight: 1.8, marginBottom: 40, maxWidth: 520 }}>
-            A selection of recent work across portraits, weddings, events, and landscapes.
+            A selection of recent work across portraits, weddings, events, landscapes, and curated collections.
           </p>
         </FadeIn>
 
@@ -103,33 +133,70 @@ export default function GalleryClient() {
           </div>
         )}
 
-        {!loading && !fetchError && filteredGallery.length === 0 && (
+        {!loading && !fetchError && displayGallery.length === 0 && (
           <div style={{ textAlign: "center", padding: "80px 0" }}>
             <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "#333" }}>No photos in this category yet.</p>
           </div>
         )}
 
-        {!loading && !fetchError && filteredGallery.length > 0 && (
-          <div className="gallery-grid">
-            {filteredGallery.map((item, i) => (
-              <FadeIn key={item.src} delay={Math.min(i * 0.06, 0.4)} className="gallery-cell">
-                <div
-                  className="gallery-img-wrap"
-                  style={{ aspectRatio: ASPECT_MAP[item.aspect] || "3 / 4" }}
-                  onClick={() => setLightboxIdx(i)}
-                >
-                  <Image
-                    src={item.src}
-                    alt={item.category}
-                    fill
-                    sizes="(max-width: 768px) 50vw, 33vw"
-                    style={{ objectFit: "cover" }}
-                  />
-                  <div className="gallery-overlay" />
-                </div>
-              </FadeIn>
-            ))}
-          </div>
+        {!loading && !fetchError && displayGallery.length > 0 && (
+          isCollectionsView ? (
+            (() => {
+              let runningIndex = 0;
+              return collectionSections.map(([name, items]) => {
+                const startIdx = runningIndex;
+                runningIndex += items.length;
+                return (
+                  <div key={name} style={{ marginBottom: 56 }}>
+                    <FadeIn>
+                      <h3 className="collection-heading">{name}</h3>
+                    </FadeIn>
+                    <div className="gallery-grid">
+                      {items.map((item, i) => (
+                        <FadeIn key={item.src} delay={Math.min(i * 0.06, 0.4)} className="gallery-cell">
+                          <div
+                            className="gallery-img-wrap"
+                            style={{ aspectRatio: ASPECT_MAP[item.aspect] || "3 / 4" }}
+                            onClick={() => setLightboxIdx(startIdx + i)}
+                          >
+                            <Image
+                              src={item.src}
+                              alt={name}
+                              fill
+                              sizes="(max-width: 768px) 50vw, 33vw"
+                              style={{ objectFit: "cover" }}
+                            />
+                            <div className="gallery-overlay" />
+                          </div>
+                        </FadeIn>
+                      ))}
+                    </div>
+                  </div>
+                );
+              });
+            })()
+          ) : (
+            <div className="gallery-grid">
+              {displayGallery.map((item, i) => (
+                <FadeIn key={item.src} delay={Math.min(i * 0.06, 0.4)} className="gallery-cell">
+                  <div
+                    className="gallery-img-wrap"
+                    style={{ aspectRatio: ASPECT_MAP[item.aspect] || "3 / 4" }}
+                    onClick={() => setLightboxIdx(i)}
+                  >
+                    <Image
+                      src={item.src}
+                      alt={item.category}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                      style={{ objectFit: "cover" }}
+                    />
+                    <div className="gallery-overlay" />
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>
