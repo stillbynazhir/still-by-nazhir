@@ -39,6 +39,28 @@ const STATS = [
 // after the known ones — and any category with zero photos stays hidden.
 const GALLERY_FILTER_ORDER = ["portraits", "weddings", "events"];
 
+// ── Collections ──
+// A "Collections" tab groups photos into named sub-sections (e.g. "Volume 1:
+// Flow and Form", or anything else — collection names aren't limited to any
+// pattern) instead of one flat grid. No code changes are needed to add a new
+// collection — it's driven entirely by the gallery worker, which parses R2
+// keys shaped like:
+//   collections__{Collection Name}__{aspect}__{filename}.jpg
+// e.g. "collections__Volume 1: Flow and Form__portrait__01.jpg"
+// and returns items with category: "collections" plus a `collection` field
+// holding the name. Collections are ordered naturally (Volume 1, Volume 2,
+// ... Volume 10, but also works fine for non-numbered names) rather than
+// strictly alphabetically.
+function isCollectionItem(item) {
+  return item.category === "collections";
+}
+function collectionNameOf(item) {
+  return (item.collection || "").trim() || "Collection";
+}
+function naturalCompare(a, b) {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
+
 function useScrollY() {
   const [y, setY] = useState(0);
   useEffect(() => {
@@ -169,20 +191,44 @@ function GalleryPage({ isMobile, onBack }) {
       });
   }, []);
 
-  const filteredGallery = activeFilter === "all"
+  const isCollectionsView = activeFilter === "collections";
+
+  const baseFiltered = activeFilter === "all"
     ? galleryItems
-    : galleryItems.filter(g => g.category === activeFilter);
+    : isCollectionsView
+      ? galleryItems.filter(isCollectionItem)
+      : galleryItems.filter(g => g.category === activeFilter);
+
+  // Collections view: group into named sections (natural-sorted, e.g. Volume 1
+  // before Volume 10) and flatten back into one ordered array so the lightbox's
+  // prev/next indices stay in sync with what's on screen.
+  const collectionSections = isCollectionsView
+    ? Object.entries(
+        baseFiltered.reduce((acc, item) => {
+          const name = collectionNameOf(item);
+          (acc[name] = acc[name] || []).push(item);
+          return acc;
+        }, {})
+      ).sort((a, b) => naturalCompare(a[0], b[0]))
+    : null;
+
+  const filteredGallery = isCollectionsView
+    ? collectionSections.flatMap(([, items]) => items)
+    : baseFiltered;
 
   const aspectMap = { portrait: "3 / 4", landscape: "4 / 3", square: "1 / 1" };
 
   // Only show tabs for categories that actually have at least one photo.
   // New categories you add to the gallery data show up automatically;
   // empty ones (like "weddings" before any wedding photos exist) stay hidden.
-  const presentCategories = Array.from(new Set(galleryItems.map(g => g.category)));
+  // Collection items don't get their own tab per collection — they're all
+  // collapsed into a single "collections" tab.
+  const presentCategories = Array.from(new Set(galleryItems.filter(g => !isCollectionItem(g)).map(g => g.category)));
+  const hasCollections = galleryItems.some(isCollectionItem);
   const knownPresent = GALLERY_FILTER_ORDER.filter(f => presentCategories.includes(f));
   const extraPresent = presentCategories.filter(c => !GALLERY_FILTER_ORDER.includes(c));
   const visibleFilters = galleryItems.length > 0
-    ? ["all", ...knownPresent, ...extraPresent]
+    ? ["all", ...(hasCollections ? ["collections"] : []), ...knownPresent, ...extraPresent]
     : [];
 
   useEffect(() => {
@@ -263,20 +309,55 @@ function GalleryPage({ isMobile, onBack }) {
         )}
 
         {!loading && !fetchError && filteredGallery.length > 0 && (
-          <div style={{ columnCount: isMobile ? 2 : 3, columnGap: 3 }}>
-            {filteredGallery.map((item, i) => (
-              <FadeIn key={item.src} delay={Math.min(i * 0.06, 0.4)}>
-                <div
-                  className="gallery-img-wrap"
-                  style={{ marginBottom: 3, aspectRatio: aspectMap[item.aspect] || "3 / 4" }}
-                  onClick={() => setLightboxIdx(i)}
-                >
-                  <img src={item.src} alt={item.category} loading="lazy" />
-                  <div className="gallery-overlay" />
-                </div>
-              </FadeIn>
-            ))}
-          </div>
+          isCollectionsView ? (
+            (() => {
+              let runningIndex = 0;
+              return collectionSections.map(([name, items]) => {
+                const startIdx = runningIndex;
+                runningIndex += items.length;
+                return (
+                  <div key={name} style={{ marginBottom: 56 }}>
+                    <FadeIn>
+                      <h3 style={{
+                        fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(24px, 3vw, 32px)",
+                        fontWeight: 300, color: "#fff", marginBottom: 20, letterSpacing: "0.02em",
+                        borderBottom: "1px solid #161616", paddingBottom: 16,
+                      }}>{name}</h3>
+                    </FadeIn>
+                    <div style={{ columnCount: isMobile ? 2 : 3, columnGap: 3 }}>
+                      {items.map((item, i) => (
+                        <FadeIn key={item.src} delay={Math.min(i * 0.06, 0.4)}>
+                          <div
+                            className="gallery-img-wrap"
+                            style={{ marginBottom: 3, aspectRatio: aspectMap[item.aspect] || "3 / 4" }}
+                            onClick={() => setLightboxIdx(startIdx + i)}
+                          >
+                            <img src={item.src} alt={name} loading="lazy" />
+                            <div className="gallery-overlay" />
+                          </div>
+                        </FadeIn>
+                      ))}
+                    </div>
+                  </div>
+                );
+              });
+            })()
+          ) : (
+            <div style={{ columnCount: isMobile ? 2 : 3, columnGap: 3 }}>
+              {filteredGallery.map((item, i) => (
+                <FadeIn key={item.src} delay={Math.min(i * 0.06, 0.4)}>
+                  <div
+                    className="gallery-img-wrap"
+                    style={{ marginBottom: 3, aspectRatio: aspectMap[item.aspect] || "3 / 4" }}
+                    onClick={() => setLightboxIdx(i)}
+                  >
+                    <img src={item.src} alt={item.category} loading="lazy" />
+                    <div className="gallery-overlay" />
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>
